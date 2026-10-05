@@ -1,0 +1,12 @@
+name: myproject
+root: ~/Projects/myproject
+
+windows:
+  - nvim: nvim
+  - agents:
+      layout: main-vertical
+      panes:
+        - agent1: opencode
+        - agent2: opencode
+        - worker: opencode-slim
+      focused_pane: agent1

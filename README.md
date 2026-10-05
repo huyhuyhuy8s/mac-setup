@@ -20,7 +20,7 @@ and the dotfiles are symlinked so this folder can double as your git repo.
 | `dotfiles/tmux/tmux.conf` | `~/.config/tmux/tmux.conf` | unchanged behaviour |
 | `dotfiles/kitty/kitty.conf` + `theme.conf` | `~/.config/kitty/` | theme baked in, macOS fixes |
 | `dotfiles/starship.toml` | `~/.config/starship.toml` | unchanged |
-| `dotfiles/tmuxinator/myproject.yml` | `~/.config/tmuxinator/` | paths/session ids need review |
+| `dotfiles/tmuxinator/myproject.yml` | `~/.config/tmuxinator/` | placeholder project — edit `root:` for your machine |
 | `dotfiles/shell/{bashrc,zshrc,bash_profile}` | `~/.bashrc`, `~/.zshrc`, `~/.bash_profile` | Omarchy sourcing removed, brew + starship added |
 | `bootstrap.sh` | — | installs Homebrew packages, casks, fonts, terminfo |
 | `install.sh` | — | symlinks dotfiles into place (with backup) |
@@ -153,7 +153,7 @@ eval "$(/opt/homebrew/bin/brew shellenv)" && echo "$PATH" | tr : '\n' | head
 | `shell/bashrc`, `zshrc` | removed Omarchy `/etc/omarchy.conf` + `$OMARCHY_PATH/default/bash/rc` sourcing; added `brew shellenv` + `starship init` + Keychain secret read | the Omarchy files don't exist on macOS |
 | `tmux/tmux.conf` | unchanged | portable; only the `tmux-256color` terminfo needs installing |
 | `starship.toml` | unchanged | portable |
-| `tmuxinator/myproject.yml` | unchanged | `root:` and opencode session IDs need review on the Mac |
+| `tmuxinator/myproject.yml` | generic placeholder | original project name/paths replaced; edit `root:` and pane commands |
 
 ---
 
