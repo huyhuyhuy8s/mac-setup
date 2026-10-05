@@ -1,0 +1,2 @@
+# ~/.bash_profile  (macOS bash login shell loads this, then ~/.bashrc)
+[[ -f ~/.bashrc ]] && . ~/.bashrc

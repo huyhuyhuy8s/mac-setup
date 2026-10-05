@@ -1,0 +1,9 @@
+# Secrets — never commit
+secrets/
+.secrets/
+*.key
+*-key
+
+# Editor / OS noise
+.DS_Store
+*.swp
