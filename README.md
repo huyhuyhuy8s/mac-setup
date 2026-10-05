@@ -25,6 +25,8 @@ and the dotfiles are symlinked so this folder can double as your git repo.
 | `bootstrap.sh` | — | installs Homebrew packages, casks, fonts, terminfo |
 | `install.sh` | — | symlinks dotfiles into place (with backup) |
 | `SECRETS.md` | — | how to recreate API keys (Keychain) |
+| `manual-install.sh` | — | one self-contained script to type if the repo can't be cloned |
+| `MANUAL-INSTALL.md` | — | hand-entry install guide (no repo access) |
 
 ---
 
