@@ -27,6 +27,7 @@ The dotfiles are symlinked, so this folder can double as a git repo.
 | `manual-install.sh` / `MANUAL-INSTALL.md` | — | hand-entry route if this repo can't be reached |
 | `install-lsp.sh` | — | pre-install every LSP/formatter/linter/DAP mason package (Intel) |
 | `install-skills.sh` | — | install agent skills via the `skills` CLI |
+| `install-mcp-skills.sh` | — | custom/system MCP servers + non-upstream skills |
 
 ---
 
@@ -51,6 +52,7 @@ chmod +x bootstrap.sh install.sh
 ./install.sh       # symlink the dotfiles into ~
 ./install-lsp.sh   # pre-install language servers (optional, recommended)
 ./install-skills.sh # install agent skills (optional)
+./install-mcp-skills.sh # custom/system MCP servers + local skills (optional)
 # then set up secrets (see SECRETS.md)
 # then open a NEW terminal and run: nvim
 ```
@@ -175,6 +177,28 @@ implement, tdd, code-review, triage, …), `anthropics/skills`,
 `vercel-labs/skills`, `JuliusBrussee/caveman`, `humanizerai/agent-skills`,
 `greensock/gsap-skills`. Needs Node ≥ 22.20 (provided by `bootstrap.sh`).
 `LIST_ONLY=1 ./install-skills.sh` lists each source's skills first.
+
+### 9. Custom/system MCP servers + local skills (optional)
+
+```bash
+./install-mcp-skills.sh
+```
+
+- Installs the **5 non-upstream skills** vendored under `dotfiles/skills/`
+  (`context7-mcp`, `opencode-zen-models`, `ponytail`, `omarchy`,
+  `diagnose-crash`) into `~/.agents/skills` and symlinks them into Claude Code,
+  Codex and OpenCode.
+- Installs MCP prerequisites: **Node ≥ 24** (MacPorts `nodejs24`, required by
+  `@opengsd/gsd-core`), **codegraph** (`colbymchenry/codegraph` standalone
+  installer), and Playwright's browsers.
+- Merges the MCP servers into `~/.config/opencode/opencode.json` (`context7`,
+  `gh_grep`, `codegraph`, `playwright`, `gsd`) with a timestamped backup. The
+  Context7 token is read from `~/.secrets/context7-key` via `{file:...}` —
+  **never written in plaintext**.
+- Prints the equivalent Claude Code / Codex wiring.
+
+`SKIP_PREREQS=1 ./install-mcp-skills.sh` runs only the skills + opencode config.
+`AGENTS="opencode" ./install-mcp-skills.sh` limits which agents get the skills.
 
 ---
 
