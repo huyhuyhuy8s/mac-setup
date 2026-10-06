@@ -26,6 +26,7 @@ The dotfiles are symlinked, so this folder can double as a git repo.
 | `SECRETS.md` | — | how to recreate API keys (Keychain) |
 | `manual-install.sh` / `MANUAL-INSTALL.md` | — | hand-entry route if this repo can't be reached |
 | `install-lsp.sh` | — | pre-install every LSP/formatter/linter/DAP mason package (Intel) |
+| `install-skills.sh` | — | install agent skills via the `skills` CLI |
 
 ---
 
@@ -49,6 +50,7 @@ chmod +x bootstrap.sh install.sh
 ./bootstrap.sh     # MacPorts ports + font + terminfo
 ./install.sh       # symlink the dotfiles into ~
 ./install-lsp.sh   # pre-install language servers (optional, recommended)
+./install-skills.sh # install agent skills (optional)
 # then set up secrets (see SECRETS.md)
 # then open a NEW terminal and run: nvim
 ```
@@ -156,6 +158,23 @@ DAP adapters (`stylua`, `shellcheck`, `shfmt`, `flake8`, `goimports`, `gofumpt`,
 
 Package names are mason **registry** names (verified), not lspconfig server
 names — e.g. `cssls`→`css-lsp`, `vtsls`→`vtsls`, `eslint`→`eslint-lsp`.
+
+### 8. Install agent skills (optional)
+
+```bash
+./install-skills.sh
+```
+
+Installs the agent-skill sets via the **`skills` CLI** (npm `skills`, Vercel
+Labs), globally into `~/.agents/skills` and symlinked into the global skills
+dirs of OpenCode, Claude Code and Codex (override with
+`AGENTS="opencode" ./install-skills.sh`).
+
+Sources: `mattpocock/skills` (grilling, wayfinder, to-spec, to-tickets,
+implement, tdd, code-review, triage, …), `anthropics/skills`,
+`vercel-labs/skills`, `JuliusBrussee/caveman`, `humanizerai/agent-skills`,
+`greensock/gsap-skills`. Needs Node ≥ 22.20 (provided by `bootstrap.sh`).
+`LIST_ONLY=1 ./install-skills.sh` lists each source's skills first.
 
 ---
 
