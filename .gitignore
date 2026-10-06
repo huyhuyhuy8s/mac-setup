@@ -7,3 +7,11 @@ secrets/
 # Editor / OS noise
 .DS_Store
 *.swp
+
+# Machine/company-specific config — keep local, never commit.
+# Only the generic placeholder project is tracked.
+dotfiles/tmuxinator/*.yml
+!dotfiles/tmuxinator/myproject.yml
+*.local.yml
+*.local.toml
+*.company.*

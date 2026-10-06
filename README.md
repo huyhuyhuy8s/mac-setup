@@ -214,3 +214,25 @@ git add -A && git commit -m "chore: tweak" && git push
 
 `~/.config/nvim` is a symlink into this repo, so `:Lazy` updates
 `dotfiles/nvim/lazy-lock.json` here automatically — commit it to pin versions.
+
+---
+
+## Keep company / machine-specific data out of git
+
+This repo is pushed to a remote. Before every push, review:
+
+```bash
+git status
+git diff --cached
+```
+
+**Never commit:** real tmuxinator projects (only the `myproject.yml` placeholder
+is tracked — other `dotfiles/tmuxinator/*.yml` are gitignored), API keys (use
+the Keychain; see `SECRETS.md`), internal hostnames, project names, ticket IDs,
+customer data, or internal URLs.
+
+If company data is ever committed, removing it in a later commit is **not**
+enough — it stays in history. Rewrite history (`git filter-branch` /
+`git filter-repo`) and force-push, or delete and recreate the repo for a
+guaranteed purge.
+
