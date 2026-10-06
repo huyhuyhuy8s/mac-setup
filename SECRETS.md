@@ -8,6 +8,7 @@ first and fall back to a plaintext file, so you can use either.
 |--------|------------------|---------------|---------|
 | OpenRouter API key | `openrouter-key` | `~/.secrets/openrouter-key` | `~/.zshrc` / `~/.bashrc` → `$OPENROUTER_API_KEY` |
 | OpenCode Go key | `opencode-go-key` | `~/.secrets/opencode-go-key` | opencode tooling (reads it itself) |
+| Context7 API key | `context7-key` | `~/.secrets/context7-key` | OpenCode MCP header (`{file:…}`), Claude Code (`${CONTEXT7_API_KEY}`), Codex |
 
 The repo **never** contains the key values. `.gitignore` excludes `*.key`,
 `*-key`, `.secrets/`, and `secrets/`.
@@ -28,6 +29,10 @@ interactively, so the secret never lands in shell history or `ps` output.
 # OpenCode Go key
 /usr/bin/security add-generic-password -a "$USER" -s opencode-go-key -U \
   -l "OpenCode Go key" -T /usr/bin/security -w
+
+# Context7 API key (used by the opencode/claude/codex MCPs)
+/usr/bin/security add-generic-password -a "$USER" -s context7-key -U \
+  -l "Context7 API key" -T /usr/bin/security -w
 ```
 
 Each command prompts:
@@ -76,6 +81,7 @@ mkdir -p ~/.secrets && chmod 700 ~/.secrets
 # Paste each key without a trailing newline:
 printf '%s' 'PASTE_OPENROUTER_KEY_HERE' > ~/.secrets/openrouter-key
 printf '%s' 'PASTE_OPENCODE_GO_KEY_HERE' > ~/.secrets/opencode-go-key
+printf '%s' 'PASTE_CONTEXT7_KEY_HERE' > ~/.secrets/context7-key
 
 chmod 600 ~/.secrets/*-key
 ```

@@ -99,6 +99,25 @@ if [ "${SKIP_PREREQS:-0}" != "1" ]; then
   # Playwright MCP needs the browsers downloaded once.
   say "Installing Playwright browsers (for the playwright MCP)..."
   npx -y playwright install || warn "playwright browser install failed"
+
+  # GSD framework: the 72 `gsd-*` system skills + agents/commands/hooks.
+  # Installer is per-runtime and requires Node >= 24.
+  if command -v node >/dev/null 2>&1 && [ "$(node -p 'process.versions.node.split(".")[0]')" -ge 24 ]; then
+    gsd_flags=()
+    for a in "${_agents[@]}"; do
+      case "$a" in
+        claude-code) gsd_flags+=(--claude) ;;
+        codex)       gsd_flags+=(--codex) ;;
+        opencode)    gsd_flags+=(--opencode) ;;
+      esac
+    done
+    if [ "${#gsd_flags[@]}" -gt 0 ]; then
+      say "Installing GSD framework (skills, agents, commands, hooks)..."
+      npx -y @opengsd/gsd-core@latest "${gsd_flags[@]}" --global || warn "GSD install failed"
+    fi
+  else
+    warn "skipping GSD install (needs Node >= 24)"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -152,32 +171,52 @@ print("wrote", path, "with mcp servers:", ", ".join(servers))
 PY
 
 # ---------------------------------------------------------------------------
-# 4. Other agents — print wiring (avoids writing tokens to plaintext configs)
+# 4. Apply the MCP servers to Claude Code and Codex (no plaintext tokens)
 # ---------------------------------------------------------------------------
-cat <<EOF
+if command -v claude >/dev/null 2>&1 || [ -f "$HOME/.claude.json" ]; then
+  say "Configuring Claude Code MCP servers (~/.claude.json)..."
+  CLAUDE_JSON="$HOME/.claude.json" python3 - <<'PY'
+import json, os, shutil, time
+path = os.environ["CLAUDE_JSON"]
+cfg = {}
+if os.path.exists(path):
+    shutil.copy2(path, f"{path}.bak-{time.strftime('%Y%m%dT%H%M%S')}")
+    with open(path) as f:
+        try:
+            cfg = json.load(f)
+        except json.JSONDecodeError:
+            raise SystemExit(f"ERROR: {path} is not valid JSON; refusing to edit.")
+# ${CONTEXT7_API_KEY} is expanded by Claude Code from the shell env (see SECRETS.md).
+servers = {
+    "context7":   {"type": "http", "url": "https://mcp.context7.com/mcp",
+                   "headers": {"Authorization": "Bearer ${CONTEXT7_API_KEY}"}},
+    "gh_grep":    {"type": "http", "url": "https://mcp.grep.app"},
+    "codegraph":  {"command": "codegraph", "args": ["serve", "--mcp"]},
+    "playwright": {"command": "npx", "args": ["-y", "@playwright/mcp"]},
+    "gsd":        {"command": "npx", "args": ["-y", "-p", "@opengsd/gsd-core", "gsd-mcp-server"]},
+}
+m = cfg.get("mcpServers", {})
+m.update(servers)
+cfg["mcpServers"] = m
+with open(path, "w") as f:
+    json.dump(cfg, f, indent=2)
+    f.write("\n")
+print("wrote", path, "->", ", ".join(servers))
+PY
+fi
 
-Done.
+if command -v codex >/dev/null 2>&1; then
+  say "Configuring Codex MCP servers (~/.codex/config.toml)..."
+  codex mcp add codegraph  -- codegraph serve --mcp                 || warn "codex add codegraph failed"
+  codex mcp add playwright -- npx -y @playwright/mcp                || warn "codex add playwright failed"
+  codex mcp add gsd        -- npx -y -p @opengsd/gsd-core gsd-mcp-server || warn "codex add gsd failed"
+  codex mcp add gh_grep    --url https://mcp.grep.app               || warn "codex add gh_grep failed"
+  # context7 needs a bearer token; add manually (Codex rejects inline tokens):
+  #   [mcp_servers.context7]
+  #   url = "https://mcp.context7.com/mcp"
+  #   bearer_token_env_var = "CONTEXT7_API_KEY"
+fi
 
-OpenCode MCP servers configured in:
-  $OPENCODE_CONFIG
-  (context7 token read from $CTX7_SECRET via {file:...}; never stored in the config)
-
-Claude Code — add the local/remote MCPs (context7 kept out to avoid a plaintext token):
-  claude mcp add codegraph -- codegraph serve --mcp
-  claude mcp add playwright -- npx -y @playwright/mcp
-  claude mcp add gsd -- npx -y -p @opengsd/gsd-core gsd-mcp-server
-  claude mcp add --transport http gh_grep https://mcp.grep.app
-  # context7 (choose one):
-  #   claude mcp add --transport http context7 https://mcp.context7.com/mcp \\
-  #     --header "Authorization: Bearer \$(cat $CTX7_SECRET)"
-
-Codex — add to ~/.codex/config.toml:
-  [mcp_servers.codegraph]
-  command = ["codegraph", "serve", "--mcp"]
-  [mcp_servers.playwright]
-  command = ["npx", "-y", "@playwright/mcp"]
-  [mcp_servers.gsd]
-  command = ["npx", "-y", "-p", "@opengsd/gsd-core", "gsd-mcp-server"]
-EOF
-
-say "Custom skills: $(ls -1 "$CANONICAL" 2>/dev/null | wc -l) total in $CANONICAL"
+say "Custom/system skills: $(ls -1 "$CANONICAL" 2>/dev/null | wc -l) in $CANONICAL"
+say "MCP: opencode applied; Claude Code + Codex applied where installed."
+say "Context7 token: $CTX7_SECRET (exported as CONTEXT7_API_KEY by the shell rc)."

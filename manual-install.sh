@@ -367,6 +367,10 @@ if _or_key="$(keychain_read openrouter-key)"; then
   export OPENROUTER_API_KEY="$_or_key"
   unset _or_key
 fi
+if _c7_key="$(keychain_read context7-key)"; then
+  export CONTEXT7_API_KEY="$_c7_key"
+  unset _c7_key
+fi
 
 export PIG_HOME="$HOME/.config/pig"
 MANUAL_EOF
@@ -417,6 +421,10 @@ keychain_read() {
 if _or_key="$(keychain_read openrouter-key)"; then
   export OPENROUTER_API_KEY="$_or_key"
   unset _or_key
+fi
+if _c7_key="$(keychain_read context7-key)"; then
+  export CONTEXT7_API_KEY="$_c7_key"
+  unset _c7_key
 fi
 
 export PIG_HOME="$HOME/.config/pig"

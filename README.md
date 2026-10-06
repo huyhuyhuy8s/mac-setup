@@ -191,14 +191,21 @@ implement, tdd, code-review, triage, …), `anthropics/skills`,
 - Installs MCP prerequisites: **Node ≥ 24** (MacPorts `nodejs24`, required by
   `@opengsd/gsd-core`), **codegraph** (`colbymchenry/codegraph` standalone
   installer), and Playwright's browsers.
-- Merges the MCP servers into `~/.config/opencode/opencode.json` (`context7`,
-  `gh_grep`, `codegraph`, `playwright`, `gsd`) with a timestamped backup. The
-  Context7 token is read from `~/.secrets/context7-key` via `{file:...}` —
-  **never written in plaintext**.
-- Prints the equivalent Claude Code / Codex wiring.
+- Installs the **GSD framework** (`npx @opengsd/gsd-core@latest --opencode
+  --global`, plus `--claude`/`--codex` for the targeted agents) — this provides
+  the 72 `gsd-*` system skills plus GSD agents, commands and hooks.
+- **Applies** the MCP servers (`context7`, `gh_grep`, `codegraph`, `playwright`,
+  `gsd`) to every targeted agent, each idempotently with a timestamped backup:
+  - OpenCode → `~/.config/opencode/opencode.json` (`mcp` block)
+  - Claude Code → `~/.claude.json` (`mcpServers`)
+  - Codex → `codex mcp add` → `~/.codex/config.toml` (`[mcp_servers.*]`)
+- The Context7 token is **never written in plaintext**: OpenCode uses
+  `{file:~/.secrets/context7-key}`; Claude Code uses `${CONTEXT7_API_KEY}` (the
+  shell rc exports it from `~/.secrets/context7-key`); Codex uses
+  `bearer_token_env_var` (add it manually — see the script output).
 
-`SKIP_PREREQS=1 ./install-mcp-skills.sh` runs only the skills + opencode config.
-`AGENTS="opencode" ./install-mcp-skills.sh` limits which agents get the skills.
+`SKIP_PREREQS=1 ./install-mcp-skills.sh` runs only the skills + agent configs.
+`AGENTS="opencode" ./install-mcp-skills.sh` limits which agents are touched.
 
 ---
 
