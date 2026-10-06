@@ -25,6 +25,7 @@ The dotfiles are symlinked, so this folder can double as a git repo.
 | `install.sh` | — | symlinks dotfiles into place (with backup) |
 | `SECRETS.md` | — | how to recreate API keys (Keychain) |
 | `manual-install.sh` / `MANUAL-INSTALL.md` | — | hand-entry route if this repo can't be reached |
+| `install-lsp.sh` | — | pre-install every LSP/formatter/linter/DAP mason package (Intel) |
 
 ---
 
@@ -47,6 +48,7 @@ cd ~/mac-setup
 chmod +x bootstrap.sh install.sh
 ./bootstrap.sh     # MacPorts ports + font + terminfo
 ./install.sh       # symlink the dotfiles into ~
+./install-lsp.sh   # pre-install language servers (optional, recommended)
 # then set up secrets (see SECRETS.md)
 # then open a NEW terminal and run: nvim
 ```
@@ -129,6 +131,31 @@ nvim
 
 LazyVim installs ~70 plugins (a few minutes). Then `:LazyHealth` and
 `:checkhealth`.
+
+### 7. Pre-install the language servers (optional, recommended)
+
+```bash
+./install-lsp.sh
+```
+
+Installs all 38 mason packages this config uses — LSP servers (`gopls`, `jdtls`,
+`vtsls`, `pyright`, `ruff`, `biome`, `oxlint`, `css-lsp`, `json-lsp`,
+`tailwindcss-language-server`, `prisma-language-server`, `dockerfile-language-server`,
+`docker-compose-language-service`, `marksman`, `taplo`, `eslint-lsp`,
+`copilot-language-server`, `lua-language-server`) plus formatters, linters, and
+DAP adapters (`stylua`, `shellcheck`, `shfmt`, `flake8`, `goimports`, `gofumpt`,
+`gomodifytags`, `impl`, `delve`, `golangci-lint`, `hadolint`,
+`markdownlint-cli2`, `markdown-toc`, `sqlfluff`, `oxfmt`, `prettier`,
+`java-debug-adapter`, `java-test`, `js-debug-adapter`, `debugpy`).
+
+- Runs headlessly and **waits** until every package is installed.
+- Idempotent — re-runs skip what's already there.
+- Also installs the runtime prerequisites via MacPorts (`go`, `nodejs22`,
+  `python312`, `openjdk17`). Skip that with `SKIP_RUNTIMES=1 ./install-lsp.sh`.
+- Fails with a non-zero exit if any package name is unknown or failed.
+
+Package names are mason **registry** names (verified), not lspconfig server
+names — e.g. `cssls`→`css-lsp`, `vtsls`→`vtsls`, `eslint`→`eslint-lsp`.
 
 ---
 
