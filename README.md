@@ -1,14 +1,13 @@
 # mac-setup — Omarchy → macOS dev environment
 
-An adapted copy of a Linux (Omarchy 4.x) development environment, prepared for a
-MacBook Pro running **macOS 26 (Apple Silicon)**.
+An adapted copy of a Linux (Omarchy 4.x) development environment, prepared for
+an **Intel Mac** running **macOS 26 (Tahoe)** using **MacPorts only** (no Homebrew).
 
 It migrates **Neovim (LazyVim)**, **tmux**, **kitty**, **starship**, and
 **tmuxinator**, removes the Linux/Omarchy-only couplings, and installs the
 native macOS equivalents.
 
-Everything here is version-pinned where it matters (`dotfiles/nvim/lazy-lock.json`),
-and the dotfiles are symlinked so this folder can double as your git repo.
+The dotfiles are symlinked, so this folder can double as a git repo.
 
 ---
 
@@ -20,32 +19,33 @@ and the dotfiles are symlinked so this folder can double as your git repo.
 | `dotfiles/tmux/tmux.conf` | `~/.config/tmux/tmux.conf` | unchanged behaviour |
 | `dotfiles/kitty/kitty.conf` + `theme.conf` | `~/.config/kitty/` | theme baked in, macOS fixes |
 | `dotfiles/starship.toml` | `~/.config/starship.toml` | unchanged |
-| `dotfiles/tmuxinator/myproject.yml` | `~/.config/tmuxinator/` | placeholder project — edit `root:` for your machine |
-| `dotfiles/shell/{bashrc,zshrc,bash_profile}` | `~/.bashrc`, `~/.zshrc`, `~/.bash_profile` | Omarchy sourcing removed, brew + starship added |
-| `bootstrap.sh` | — | installs Homebrew packages, casks, fonts, terminfo |
+| `dotfiles/tmuxinator/myproject.yml` | `~/.config/tmuxinator/` | placeholder project — edit `root:` |
+| `dotfiles/shell/{bashrc,zshrc,bash_profile}` | `~/.bashrc`, `~/.zshrc`, `~/.bash_profile` | Omarchy sourcing removed, MacPorts PATH + starship + Keychain |
+| `bootstrap.sh` | — | installs MacPorts ports, the font, terminfo |
 | `install.sh` | — | symlinks dotfiles into place (with backup) |
 | `SECRETS.md` | — | how to recreate API keys (Keychain) |
-| `manual-install.sh` | — | one self-contained script to type if the repo can't be cloned |
-| `MANUAL-INSTALL.md` | — | hand-entry install guide (no repo access) |
+| `manual-install.sh` / `MANUAL-INSTALL.md` | — | hand-entry route if this repo can't be reached |
 
 ---
 
 ## Prerequisites
 
-- Apple Silicon Mac (arm64), macOS 26.
-- Admin rights (Homebrew + the optional JDK symlink).
-- Network access.
+- Intel Mac running macOS 26 (Tahoe). *(macOS 26 is the last Intel release.)*
+- **MacPorts installed** — a signed `.pkg` from
+  <https://www.macports.org/install.php> (pick the macOS 26 / Tahoe package).
+  It installs to `/opt/local` and needs your admin password.
+- Xcode Command Line Tools (`xcode-select --install`) — required by MacPorts
+  and by `nvim-treesitter`.
+- Admin rights (`sudo`) — MacPorts installs are system-wide.
 
 ---
 
 ## Quick start
 
-Transfer the folder to the Mac, then:
-
 ```bash
 cd ~/mac-setup
 chmod +x bootstrap.sh install.sh
-./bootstrap.sh     # Homebrew + all packages, apps, fonts
+./bootstrap.sh     # MacPorts ports + font + terminfo
 ./install.sh       # symlink the dotfiles into ~
 # then set up secrets (see SECRETS.md)
 # then open a NEW terminal and run: nvim
@@ -57,41 +57,36 @@ chmod +x bootstrap.sh install.sh
 
 ### 1. Transfer this folder to the Mac
 
-From the Linux machine (pick one):
+From the Linux machine:
 
 ```bash
-# A) archive + AirDrop/scp
-tar czf mac-setup.tar.gz mac-setup
-scp mac-setup.tar.gz you@macbook:~
+tar czf mac-setup.tar.gz mac-setup            # AirDrop/scp it
 # on the Mac: tar xzf mac-setup.tar.gz
 ```
 
-```bash
-# B) git (recommended if you want to keep syncing)
-cd ~/mac-setup
-git init && git add . && git commit -m "chore: initial mac-setup"
-# create an empty repo on your host, then:
-git remote add origin <your-repo-url> && git push -u origin main
-```
+If the Mac can't `git clone`, use the hand-entry route in `MANUAL-INSTALL.md`.
 
-### 2. Bootstrap
+### 2. Bootstrap (MacPorts)
 
 ```bash
 cd ~/mac-setup
 ./bootstrap.sh
 ```
 
-This installs, in order:
+This runs:
 
-- **Xcode Command Line Tools** (git + clang for `nvim-treesitter` parsers).
-- **Homebrew** (if missing).
-- Formulae: `neovim` `ripgrep` `fd` `fzf` `lazygit` `tree-sitter-cli` `node`
-  `python3` `go` `tmux` `starship` `tmuxinator` `git`.
-- Casks: `kitty`, `font-maple-mono-nf`.
-- The `tmux-256color` terminfo entry (not present in macOS's default DB).
-- Optional: global `biome`, `openjdk@17` (for the Java LSP).
+- **Xcode Command Line Tools** check (git + clang for `nvim-treesitter`).
+- `sudo port selfupdate`.
+- Ports: `neovim` `ripgrep` `fd` `fzf` `lazygit` `tree-sitter-cli`
+  `nodejs22` `python312` `go` `tmux` `starship` `git` `kitty`.
+- `sudo port select` to activate `python3` and `nodejs`.
+- The **Maple Mono NF** font into `~/Library/Fonts` (no MacPorts port exists),
+  with the quarantine attribute cleared.
+- Optional: `openjdk17` (Java LSP), global `biome`.
+- A fallback `tmux-256color` terminfo entry *only if* it's missing (Tahoe
+  ships it, so normally skipped).
 
-Re-runnable. If it stops at the Xcode step, finish that install and run it again.
+Re-runnable. Not in MacPorts: **tmuxinator** — see step 5.
 
 ### 3. Install the dotfiles
 
@@ -99,45 +94,41 @@ Re-runnable. If it stops at the Xcode step, finish that install and run it again
 ./install.sh
 ```
 
-It symlinks each file into `~`, backing up any real file it replaces to
+Symlinks each file into `~`, backing up any real file it replaces to
 `~/.dotfiles-backup-<timestamp>/`, and clones the tmux
-`vim-tmux-navigator` plugin (the tmux config `run`s it directly; TPM is not used).
+`vim-tmux-navigator` plugin (the tmux config `run`s it directly; TPM is unused).
 
-> Prefer copies over symlinks? Replace `ln -s "$src" "$dst"` in `install.sh`
-> with `cp -RL "$src" "$dst"`.
+> Prefer copies over symlinks? Replace `ln -s "$src" "$dst"` with
+> `cp -RL "$src" "$dst"` in `install.sh`.
 
 ### 4. Secrets
 
-API keys are stored in the **macOS Keychain** (recommended), with a plaintext
-`~/.secrets/<name>` file as fallback. See **`SECRETS.md`** for the exact commands.
+API keys live in the **macOS Keychain** (recommended), with a plaintext
+`~/.secrets/<name>` fallback. See **`SECRETS.md`**.
 
-### 5. First Neovim launch
+### 5. tmuxinator
+
+MacPorts has no `tmuxinator` port. Pick one:
+
+```bash
+# a) Ruby gem
+sudo port install ruby34
+sudo gem install tmuxinator
+
+# b) tmuxp (different CLI)
+sudo port install py312-tmuxp
+```
+
+The shell alias is `mux='tmuxinator'`.
+
+### 6. First Neovim launch
 
 ```bash
 nvim
 ```
 
-LazyVim will install ~70 plugins (can take a few minutes). Then:
-
-```
-:LazyHealth      " recommended by LazyVim
-:checkhealth     " look for errors under clipboard, language providers
-```
-
-### 6. Verify the rest
-
-```bash
-tmux -V                     # 3.x
-kitty --version
-starship --version
-mux ls                      # tmuxinator projects
-eval "$(/opt/homebrew/bin/brew shellenv)" && echo "$PATH" | tr : '\n' | head
-```
-
-- **kitty**: check the font renders, transparency/blur works, and Option+Enter
-  splits tmux panes (`macos_option_as_alt yes` is now set).
-- **tmux**: prefix is `C-Space` (second prefix `C-b`); `q` reloads config.
-- **starship**: open a new shell; the prompt should be the cyan `❯` theme.
+LazyVim installs ~70 plugins (a few minutes). Then `:LazyHealth` and
+`:checkhealth`.
 
 ---
 
@@ -146,61 +137,58 @@ eval "$(/opt/homebrew/bin/brew shellenv)" && echo "$PATH" | tr : '\n' | head
 | File | Change | Why |
 |------|--------|-----|
 | `nvim/lua/plugins/go-lint.lua` | `cmd` `/usr/bin/golangci-lint` → `golangci-lint` | path is Linux-specific; use PATH |
-| `nvim/lua/config/remote_clipboard.lua` | rewritten cross-platform | keeps OSC 52; adds `pbcopy`/`pbpaste` on macOS; guards the Linux-only `/proc` process walk |
-| `nvim/lua/plugins/theme.lua` | symlink dereferenced to a real file | it was a symlink into Omarchy's theme state (`terminus` theme) that would break on macOS |
-| `kitty/kitty.conf` | `include …/omarchy/current/theme/kitty.conf` → local `theme.conf` | Omarchy theme path doesn't exist on macOS |
-| `kitty/kitty.conf` | removed duplicate `opacity`; kept `background_opacity 0.70` | `opacity` is not a valid option and warns |
+| `nvim/lua/config/remote_clipboard.lua` | rewritten cross-platform | keeps OSC 52; adds `pbcopy`/`pbpaste`; guards the Linux-only `/proc` process walk |
+| `nvim/lua/plugins/theme.lua` | symlink dereferenced to a real file | was a symlink into Omarchy's theme state (`terminus`) that would break |
+| `kitty/kitty.conf` | `include …/omarchy/current/theme/kitty.conf` → local `theme.conf` | Omarchy theme path doesn't exist |
+| `kitty/kitty.conf` | dropped duplicate `opacity`; kept `background_opacity 0.70` | `opacity` is not a valid option |
 | `kitty/kitty.conf` | added `macos_option_as_alt yes` | required for tmux `M-Enter`/`M-Escape`/`M-Arrow` bindings |
 | `kitty/kitty.conf` | commented out `listen_on …${XDG_RUNTIME_DIR}…` | macOS has no `XDG_RUNTIME_DIR`; feature was Omarchy/Hyprland cwd lookup |
-| `shell/bashrc`, `zshrc` | removed Omarchy `/etc/omarchy.conf` + `$OMARCHY_PATH/default/bash/rc` sourcing; added `brew shellenv` + `starship init` + Keychain secret read | the Omarchy files don't exist on macOS |
-| `tmux/tmux.conf` | unchanged | portable; only the `tmux-256color` terminfo needs installing |
+| `shell/bashrc`, `zshrc` | removed Omarchy sourcing; added MacPorts PATH (`/opt/local`) + `starship init` + Keychain read | the Omarchy files don't exist on macOS |
+| `tmux/tmux.conf` | unchanged | portable; `tmux-256color` is present on Tahoe |
 | `starship.toml` | unchanged | portable |
-| `tmuxinator/myproject.yml` | generic placeholder | original project name/paths replaced; edit `root:` and pane commands |
+| `tmuxinator/myproject.yml` | generic placeholder | original project name/paths replaced; edit `root:` |
 
 ---
 
 ## Dependencies installed (and why)
 
-| Tool | Used by |
-|------|---------|
-| `neovim` 0.12.x | LazyVim (requires ≥ 0.11.2) |
-| `ripgrep`, `fd`, `fzf` | Telescope/search, file finding |
-| `lazygit` | LazyVim `<leader>gg`, neo-tree git integration |
-| `tree-sitter-cli` | `nvim-treesitter` parser builds (now required) |
-| `node`/`npm` | many LSPs, markdown-preview, eslint/biome |
-| `python3` | Python tooling |
-| `go` | `gopls`, `goimports`, `gofumpt` (LazyVim `lang.go`) |
-| `tmux` | tmux config + nvim-tmux-navigator |
-| `starship` | prompt |
-| `tmuxinator` | `mux` / project sessions |
-| `kitty` (cask) | terminal |
-| `font-maple-mono-nf` (cask) | `font_family Maple Mono NF` |
-| `openjdk@17` (optional) | `jdtls` (LazyVim `lang.java`) |
+| Tool | MacPorts port | Used by |
+|------|---------------|---------|
+| Neovim 0.12.x | `neovim` | LazyVim (requires ≥ 0.11.2) |
+| ripgrep / fd / fzf | `ripgrep` `fd` `fzf` | Telescope/search, file finding |
+| lazygit | `lazygit` | LazyVim `<leader>gg`, neo-tree git |
+| tree-sitter CLI | `tree-sitter-cli` | `nvim-treesitter` parser builds |
+| Node 22 / Python 3.12 | `nodejs22` `python312` | many LSPs, formatters |
+| Go | `go` | `gopls`, `goimports`, `gofumpt` |
+| tmux | `tmux` | tmux config + vim-tmux-navigator |
+| starship | `starship` | prompt |
+| git | `git` | plugin cloning |
+| kitty | `kitty` | terminal (port may lag upstream by a release; `kitty --version`) |
+| Java 17 (optional) | `openjdk17` | `jdtls` |
 
-Everything else (LSP servers, formatters, linters) is installed on demand by
-**mason** on first use.
+LSP servers, formatters, and linters are installed on demand by **mason** on
+first use (x86_64 binaries select correctly on Intel).
 
 ---
 
-## Known macOS gotchas / troubleshooting
+## Known macOS / Intel gotchas
 
-- **`terminals database is inaccessible` / terminfo errors** — the
-  `tmux-256color` entry. `bootstrap.sh` installs it; if it failed, either
-  re-run it or change `default-terminal` in `dotfiles/tmux/tmux.conf` to
-  `screen-256color`.
+- **Fonts have no MacPorts port.** `bootstrap.sh` downloads `MapleMono-NF.zip`
+  into `~/Library/Fonts` and runs `xattr -cr`. If kitty shows boxes, re-run:
+  `xattr -cr ~/Library/Fonts/MapleMono-NF*.ttf` and restart kitty.
+- **`tmuxinator` is not in MacPorts** — install the gem or use tmuxp (step 5).
 - **`~/.tmux.conf` shadows the config** — macOS tmux prefers `~/.tmux.conf`
   over `~/.config/tmux/tmux.conf`. Ensure no stale `~/.tmux.conf` exists.
 - **markdown-preview blank / prints a Node version** — run:
   `cd ~/.local/share/nvim/lazy/markdown-preview.nvim/app && npm install`.
-- **Mason installs an x86_64 binary on arm64** (e.g. `hadolint`, error -86) —
-  install that tool via `brew` instead and point the linter at it.
-- **Clipboard** — Neovim uses `pbcopy`/`pbpaste` natively. Inside tmux the
-  bundled `remote_clipboard.lua` also emits OSC 52. If `:checkhealth` is happy
-  but paste is empty, confirm kitty's `clipboard_control` allows read and tmux
-  has `set-clipboard on`.
-- **Java LSP** — `jdtls` needs a JDK on PATH; link it as shown by `bootstrap.sh`.
-- **Icons look like boxes** — the Nerd Font isn't active/installed; reinstall
-  `font-maple-mono-nf` and restart kitty.
+- **Clipboard** — Neovim uses `pbcopy`/`pbpaste` natively; inside tmux the
+  bundled `remote_clipboard.lua` also emits OSC 52. If paste is empty, check
+  kitty's `clipboard_control` and tmux `set-clipboard`.
+- **Java LSP** — `jdtls` needs a JDK; `openjdk17` is installed by `bootstrap.sh`.
+- **MacPorts build lag** — if a port fails to fetch a binary, try
+  `sudo port sync && sudo port install <port>` (it may build from source).
+- **Intel + Mason** — x86_64 is the well-supported path; the arm64-only
+  `hadolint` bug does not apply.
 
 ---
 
@@ -209,12 +197,11 @@ Everything else (LSP servers, formatters, linters) is installed on demand by
 - **Omarchy theme system / Hyprland / quickshell / waybar** — Linux desktop only.
   The current theme's colours are baked into `nvim/lua/plugins/theme.lua` and
   `kitty/theme.conf`.
-- **mise-managed toolchains** — a `~/.config/mise` existed on the Linux box.
-  If you rely on it, install `mise` and recreate `mise.toml`; otherwise the brew
-  formulae cover the essentials.
-- **alacritty / ghostty configs** — available on the Linux box but not requested.
+- **mise-managed toolchains** — a `~/.config/mise` existed on the Linux box. If
+  you rely on it, install `mise` and recreate `mise.toml`; otherwise the ports
+  above cover the essentials.
+- **alacritty / ghostty configs** — present on the Linux box but not requested.
 - **opencode / oh-my-pi (`PIG_HOME`)** — separate tools; recreate separately.
-- **Hyprland global keybindings that used kitty's `listen_on` socket.**
 
 ---
 
@@ -222,10 +209,8 @@ Everything else (LSP servers, formatters, linters) is installed on demand by
 
 ```bash
 cd ~/mac-setup
-git add -A
-git commit -m "chore: tweak"
-git push
+git add -A && git commit -m "chore: tweak" && git push
 ```
 
-`~/.config/nvim` is a symlink into this repo, so `:Lazy` sync updates
+`~/.config/nvim` is a symlink into this repo, so `:Lazy` updates
 `dotfiles/nvim/lazy-lock.json` here automatically — commit it to pin versions.

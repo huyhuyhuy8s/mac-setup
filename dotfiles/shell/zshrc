@@ -1,8 +1,8 @@
 # ~/.zshrc  (macOS default shell)
 
-# Homebrew (Apple Silicon). `brew shellenv` also puts brew's bin on PATH.
-if [ -x /opt/homebrew/bin/brew ]; then
-  eval "$(/opt/homebrew/bin/brew shellenv)"
+# MacPorts. Intel macOS uses the /opt/local prefix; no shellenv step needed.
+if [ -d /opt/local/bin ]; then
+  export PATH="/opt/local/bin:/opt/local/sbin:$PATH"
 fi
 
 # Toolchain paths (mirrors the Linux machine)

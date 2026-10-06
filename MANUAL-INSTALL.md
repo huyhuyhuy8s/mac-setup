@@ -1,13 +1,12 @@
 # Manual install (no repo access)
 
 If the internal Mac can't reach your personal GitHub, you don't need it. The
-whole environment is reproduced by **`manual-install.sh`** — one
-self-contained script of `write_file` heredocs plus the Homebrew commands. No
-clone, no external config files, nothing from this repo at runtime.
+whole environment is reproduced by **`manual-install.sh`** — one self-contained
+script of `write_file` heredocs plus the **MacPorts** commands. No clone, no
+external config files, nothing from this repo at runtime.
 
-The only external fetches are: **Homebrew packages** (assuming helpdesk
-approves brew) and, on first `nvim` launch, **upstream plugin repos** (LazyVim,
-Telescope, …) — not your personal repo.
+The only external fetches are: **MacPorts ports** and, on first `nvim` launch,
+**upstream plugin repos** (LazyVim, Telescope, …) — not your personal repo.
 
 > You will need a second screen/device showing `manual-install.sh` while you
 > type on the Mac. Read-only is fine; never run the script anywhere but the Mac.
@@ -23,22 +22,23 @@ mkdir -p ~/setup && cd ~/setup
 nvim manual-install.sh      # or: nano manual-install.sh
 ```
 
-Type the entire contents of `manual-install.sh` (1,600+ lines — the complete
-environment). It is organised as independent blocks:
+Type the entire contents of `manual-install.sh` (1,600+ lines). It is organised
+as independent blocks:
 
-- the Homebrew + Xcode section at the top,
+- the Xcode + MacPorts section at the top,
 - one `write_file "$HOME/..." <<'MANUAL_EOF' … MANUAL_EOF` block per config file,
 - a final tmux-plugin clone.
 
 **2. Syntax-check, then run.**
 
 ```bash
-bash -n manual-install.sh            # catch typos first
-bash manual-install.sh               # brew packages + write all configs
+bash -n manual-install.sh              # catch typos first
+bash manual-install.sh                 # ports + write all configs
 ```
 
-- To write configs only and skip brew: `INSTALL_BREW=0 bash manual-install.sh`
+- To write configs only and skip ports: `INSTALL_PORTS=0 bash manual-install.sh`
 - Existing files are backed up to `<file>.bak.<timestamp>` before being written.
+- The port section needs `sudo` and a prior MacPorts install.
 
 **3. Open a NEW terminal and run `nvim`.** LazyVim installs the plugins.
 
@@ -46,50 +46,67 @@ bash manual-install.sh               # brew packages + write all configs
 
 ## Route B — less typing (recommended)
 
-Let Homebrew and LazyVim provide the bulk, and type only *your* custom files.
+Let MacPorts and LazyVim provide the bulk, and type only *your* custom files.
 
-**1. Install the toolchain.**
+**1. Prerequisites: Xcode CLT + MacPorts.**
 
 ```bash
 xcode-select --install
-
-# If brew is missing:
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-eval "$(/opt/homebrew/bin/brew shellenv)"
-
-brew install neovim ripgrep fd fzf lazygit tree-sitter-cli \
-  node python3 go tmux starship tmuxinator git
-brew install --cask kitty font-maple-mono-nf
-
-# tmux-256color terminfo is missing from macOS by default:
-infocmp tmux-256color >/dev/null 2>&1 || \
-  curl -fsSL https://raw.githubusercontent.com/tmux/tmux/master/terminfo/t/tmux-256color \
-  | tic -x -o "$HOME/.terminfo" -
+# Install MacPorts itself first: download the macOS 26 (Tahoe) .pkg from
+#   https://www.macports.org/install.php
+# open it and follow the installer, then:
+sudo port selfupdate
 ```
 
-**2. Grab the upstream LazyVim starter** (this is LazyVim's repo, not yours).
+**2. Install the ports.**
+
+```bash
+sudo port install neovim ripgrep fd fzf lazygit tree-sitter-cli \
+  nodejs22 python312 go tmux starship git kitty
+
+sudo port select --set python3 python312
+sudo port select --set nodejs  nodejs22
+
+# optional: Java LSP
+sudo port install openjdk17
+
+# tmuxinator is NOT in MacPorts — pick one:
+sudo port install ruby34 && sudo gem install tmuxinator
+# or: sudo port install py312-tmuxp
+```
+
+**3. Install the Maple Mono NF font** (no MacPorts port exists).
+
+```bash
+# Download MapleMono-NF.zip from:
+#   https://github.com/subframe7536/maple-font/releases
+mkdir -p ~/Library/Fonts
+unzip -o MapleMono-NF.zip -d ~/Library/Fonts/
+xattr -cr ~/Library/Fonts/MapleMono-NF*.ttf      # required for kitty to find it
+```
+
+**4. Grab the upstream LazyVim starter** (this is LazyVim's repo, not yours).
 
 ```bash
 git clone https://github.com/LazyVim/starter ~/.config/nvim
 rm -rf ~/.config/nvim/.git
 ```
 
-**3. Type only the custom files** (each is a separate `MANUAL_EOF` block in
-`manual-install.sh`). Everything else comes from the starter or the plugins.
+**5. Type only the custom files** (each is a separate `MANUAL_EOF` block in
+`manual-install.sh`).
 
-| Type this | From block in `manual-install.sh` |
-|-----------|-----------------------------------|
+| Type this | Block in `manual-install.sh` |
+|-----------|------------------------------|
 | `~/.config/nvim/init.lua` | `write_file $HOME/.config/nvim/init.lua` |
-| `~/.config/nvim/lazyvim.json` | `…/lazyvim.json` — **the 16 extras list; don't skip** |
-| `~/.config/nvim/.neoconf.json` | `…/.neoconf.json` |
-| `~/.config/nvim/stylua.toml` | `…/stylua.toml` |
+| `~/.config/nvim/lazyvim.json` | **the 16 extras list — don't skip** |
+| `~/.config/nvim/.neoconf.json` | tiny |
+| `~/.config/nvim/stylua.toml` | tiny |
 | `~/.config/nvim/lua/config/lazy.lua` | imports the extras + your plugins |
 | `~/.config/nvim/lua/config/options.lua` | tabstop + remote clipboard |
 | `~/.config/nvim/lua/config/remote_clipboard.lua` | cross-platform clipboard |
 | `~/.config/nvim/lua/config/autocmds.lua` | 8 lines |
 | `~/.config/nvim/lua/config/keymaps.lua` | 3 lines |
-| `~/.config/nvim/lua/plugins/*.lua` | the plugin set (see below) |
+| `~/.config/nvim/lua/plugins/*.lua` | the plugin set |
 | `~/.config/nvim/plugin/after/transparency.lua` | transparency |
 | `~/.bashrc`, `~/.zshrc`, `~/.bash_profile` | shell |
 | `~/.config/tmux/tmux.conf` | tmux |
@@ -97,14 +114,10 @@ rm -rf ~/.config/nvim/.git
 | `~/.config/starship.toml` | prompt |
 | `~/.config/tmuxinator/myproject.yml` | placeholder project |
 
-**Skip these** (safe to omit):
+**Skip** (safe to omit): `lazy-lock.json` (LazyVim regenerates it),
+`LICENSE`, `README.md`, `.gitignore`, and `lua/plugins/example.lua`.
 
-- `~/.config/nvim/lazy-lock.json` — regenerated by LazyVim (`:Lazy` → lock).
-  You lose exact version pinning; `:Lazy sync` will re-pin.
-- `~/.config/nvim/LICENSE`, `~/.config/nvim/README.md`, `.gitignore`.
-- `~/.config/nvim/lua/plugins/example.lua` — LazyVim's own template.
-
-**4. Recreate the tmux plugin path** the config `run`s directly:
+**6. Recreate the tmux plugin** the config `run`s directly:
 
 ```bash
 mkdir -p ~/.config/tmux/plugins
@@ -116,8 +129,6 @@ git clone --depth 1 https://github.com/christoomey/vim-tmux-navigator \
 
 ## Trim the typing further (lean nvim)
 
-The big optional blocks in `lua/plugins/` are:
-
 | File | Lines | Keep? |
 |------|-------|-------|
 | `all-themes.lua` | ~100 | only if you want the extra colourschemes |
@@ -126,8 +137,7 @@ The big optional blocks in `lua/plugins/` are:
 | `harpoon.lua`, `neoclip.lua`, `nvim-ufo.lua`, `undotree.lua`, `telescope.lua`, `snacks*.lua` | — | keep for full parity |
 
 Skipping `all-themes.lua` and `example.lua` removes ~300 lines with no
-functional loss beyond unused colourschemes. `theme.lua` needs `aether.nvim`,
-which LazyVim installs automatically.
+functional loss beyond unused colourschemes.
 
 ---
 
@@ -152,18 +162,19 @@ nvim --version            # 0.12.x
 tmux -V
 kitty --version
 starship --version
+infocmp tmux-256color >/dev/null && echo "terminfo OK"
 ```
 
-Then open a NEW terminal (so `.zshrc` is re-read) and run `nvim`, followed by
-`:LazyHealth` and `:checkhealth`. Option+Enter in kitty should split a tmux pane.
+Then open a NEW terminal and run `nvim`, followed by `:LazyHealth` and
+`:checkhealth`. Option+Enter in kitty should split a tmux pane.
 
 ---
 
 ## What `manual-install.sh` does
 
 - Writes **42 config files** into `$HOME` (backing up any existing real file).
-- Installs brew formulae + casks and the `tmux-256color` terminfo — unless
-  `INSTALL_BREW=0`.
+- Installs MacPorts ports, selects python3/nodejs, installs the Maple Mono NF
+  font, and adds `tmux-256color` only if missing — unless `INSTALL_PORTS=0`.
 - Clones the tmux `vim-tmux-navigator` plugin.
 - **Skips** `lazy-lock.json`, `LICENSE`, `README.md`, `.gitignore`.
 - Normalises a trailing newline on the two files that lacked one.

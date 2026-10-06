@@ -58,8 +58,8 @@ Delete:
 - The login keychain is unlocked automatically after a **GUI login**. In a
   **pure SSH session** (or before first unlock) it can be locked and the read
   fails silently — the wrapper then falls back to the file. If you use SSH a
-  lot, consider `brew install keychain` (George Nachman's helper) to unlock once
-  per login, or use Option B.
+  lot, consider a keychain-unlock helper to unlock once per login, or use
+  Option B (plaintext file).
 - Reads run once per interactive shell (~5–20 ms when unlocked), and the
   wrapper exports nothing when the value is missing.
 
